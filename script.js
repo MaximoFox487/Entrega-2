@@ -20,71 +20,46 @@ async function fetchCryptoList() {
 async function populateCryptoDropdown() {
     const cryptos = await fetchCryptoList();
 
-    const fromSelect = document.getElementById('fromCurrency');
-    const toSelect = document.getElementById('toCurrency');
+    const cryptoSelect = document.getElementById('cryptoCurrency');
+    const paymentSelect = document.getElementById('paymentCurrency');
 
     cryptos.forEach(crypto => {
         const option = document.createElement('option');
         option.value = crypto;
         option.text = crypto;
-        fromSelect.appendChild(option.cloneNode(true));
-        toSelect.appendChild(option.cloneNode(true));
+        cryptoSelect.appendChild(option.cloneNode(true));
+        paymentSelect.appendChild(option.cloneNode(true));
     });
 
     // Obtener la cotización inicialmente para la selección predeterminada
-    fetchQuote('from');
-    fetchQuote('to');
+    fetchQuote();
 }
 
 // Función para obtener la cotización de la criptomoneda seleccionada desde Binance
-async function fetchQuote(type) {
-    const currency = document.getElementById(`${type}Currency`).value;
+async function fetchQuote() {
+    const currency = document.getElementById('cryptoCurrency').value;
 
     try {
         const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${currency}USDT`);
         const data = await response.json();
 
-        const quoteElement = document.getElementById(`${type}Quote`);
-        quoteElement.textContent = `Current Price: ${parseFloat(data.price).toFixed(2)} USDT`;
-        calculateConversion(); // Recalcular la conversión después de obtener la cotización
+        const quoteElement = document.getElementById('cryptoQuote');
+        quoteElement.textContent = `Precio Actual: ${parseFloat(data.price).toFixed(2)} USDT`;
     } catch (error) {
-        console.error(`Error fetching ${type} quote:`, error);
-    }
-}
-
-// Función para calcular el resultado de la conversión
-function calculateConversion() {
-    const fromAmount = parseFloat(document.getElementById('fromAmount').value);
-    const fromQuote = parseFloat(document.getElementById('fromQuote').textContent.split(':')[1]);
-
-    if (!isNaN(fromAmount) && !isNaN(fromQuote) && fromQuote > 0) {
-        const toCurrencyPrice = parseFloat(document.getElementById('toQuote').textContent.split(':')[1]);
-        const tokensReceived = (fromAmount * fromQuote) / toCurrencyPrice;
-        const conversionResult = tokensReceived.toFixed(6);
-
-        const conversionResultElement = document.getElementById('conversionResult');
-        conversionResultElement.textContent = conversionResult;
-
-        const toCurrencySymbolElement = document.getElementById('toCurrencySymbol');
-        toCurrencySymbolElement.textContent = document.getElementById('toCurrency').value;
-    }
-}
-
-// Función para realizar el intercambio de criptomonedas
-function convert() {
-    const amount = parseFloat(document.getElementById('fromAmount').value);
-
-    if (amount > 0) {
-        const conversionMessage = document.getElementById('conversion-message');
-        conversionMessage.innerText = 'Swap Exitoso';
-    } else {
-        const conversionMessage = document.getElementById('conversion-message');
-        conversionMessage.innerText = 'Ingreso Invalido';
+        console.error(`Error fetching quote:`, error);
     }
 }
 
 // Función para agregar una criptomoneda al carrito
-function addToCart(crypto, amount) {
+function addToCart() {
+    const crypto = document.getElementById('cryptoCurrency').value;
+    const amount = parseFloat(document.getElementById('cryptoAmount').value);
+
+    if (isNaN(amount) || amount <= 0) {
+        alert("Ingrese una cantidad válida.");
+        return;
+    }
+
     const index = cart.findIndex(item => item.crypto === crypto);
     if (index !== -1) {
         cart[index].amount += amount;
@@ -107,28 +82,51 @@ function hideCart() {
 }
 
 // Función para actualizar la visualización del carrito
-function updateCartDisplay() {
+async function updateCartDisplay() {
     const cartItemsDiv = document.getElementById('cart-items');
     cartItemsDiv.innerHTML = '';
 
-    let total = 0;
-    cart.forEach(item => {
-        const cryptoTotal = item.amount; // Asegúrate de actualizar con el precio correcto
-        total += cryptoTotal;
+    const paymentCurrency = document.getElementById('paymentCurrency').value;
+    let totalUSDT = 0;
+
+    for (const item of cart) {
+        const priceInUSDT = await fetchCryptoPriceInUSDT(item.crypto);
+        const totalForItemUSDT = item.amount * priceInUSDT;
+        totalUSDT += totalForItemUSDT;
 
         const itemDiv = document.createElement('div');
         itemDiv.innerHTML = `
-            <span>${item.crypto}: ${item.amount}</span>
+            <span>${item.crypto}: ${item.amount} x ${priceInUSDT.toFixed(2)} USDT = ${totalForItemUSDT.toFixed(2)} USDT</span>
             <button onclick="removeFromCart('${item.crypto}')">Eliminar</button>
             <button onclick="updateCartItem('${item.crypto}', -1)">-</button>
             <button onclick="updateCartItem('${item.crypto}', 1)">+</button>
         `;
         cartItemsDiv.appendChild(itemDiv);
-    });
+    }
+
+    const priceOfPaymentCurrencyInUSDT = await fetchCryptoPriceInUSDT(paymentCurrency);
+    const totalInPaymentCurrency = totalUSDT / priceOfPaymentCurrencyInUSDT;
 
     const totalDiv = document.createElement('div');
-    totalDiv.innerHTML = `Total: ${total}`;
-    cartItemsDiv.appendChild(totalDiv);
+    totalDiv.innerHTML = `Total: ${totalInPaymentCurrency.toFixed(2)} ${paymentCurrency}`;
+    document.getElementById('cart-total').innerHTML = '';
+    document.getElementById('cart-total').appendChild(totalDiv);
+}
+
+// Función para obtener el precio de una criptomoneda en USDT
+async function fetchCryptoPriceInUSDT(crypto) {
+    if (crypto === 'USDT') {
+        return 1;
+    }
+
+    try {
+        const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${crypto}USDT`);
+        const data = await response.json();
+        return parseFloat(data.price);
+    } catch (error) {
+        console.error(`Error fetching price for ${crypto}USDT:`, error);
+        return 0;
+    }
 }
 
 // Función para eliminar una criptomoneda del carrito
@@ -142,6 +140,7 @@ function updateCartItem(crypto, amount) {
     const index = cart.findIndex(item => item.crypto === crypto);
     if (index !== -1) {
         cart[index].amount += amount;
+    
         if (cart[index].amount <= 0) {
             removeFromCart(crypto);
         } else {
@@ -150,5 +149,12 @@ function updateCartItem(crypto, amount) {
     }
 }
 
+// Función para vaciar el carrito
+function clearCart() {
+    cart = [];
+    updateCartDisplay();
+}
+
 // Llamar a la función para poblar los menús desplegables
 populateCryptoDropdown();
+
