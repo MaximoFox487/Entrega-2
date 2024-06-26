@@ -76,31 +76,33 @@
           </div>
         </div>
 <!----  De aca hasta ---->
-<div class="container2">
-  <h1>Insta Swap</h1>
-
-  <div class="conversion-table">
-    <div class="row">
-      <label for="fromCurrency">From:</label>
-      <select id="fromCurrency" onchange="fetchQuote('from')" required></select>
-      <input type="number" id="fromAmount" placeholder="Enter amount..." oninput="calculateConversion()" required>
-      <label for="toCurrency">To:</label>
-      <select id="toCurrency" onchange="fetchQuote('to')" required></select>
-      <span id="toQuote"></span>
+<div class="container mt-5">
+        <h1 class="textoswap">Insta Swap</h1>
+        <div class="conversion-table">
+            <div class="row">
+                <label for="cryptoCurrency">Moneda:</label>
+                <select id="cryptoCurrency" required></select>
+                <label for="cryptoAmount">Cantidad:</label>
+                <input type="number" id="cryptoAmount" placeholder="Ingrese cantidad..." required>
+                <span id="cryptoQuote"></span>
+                <button onclick="addToCart()">Agregar al Carrito</button>
+            </div>
+        </div>
     </div>
-    <div class="row">
-      <span id="fromQuote"></span>
-      <label for="conversionResult">You will receive:</label>
-      <span id="conversionResult"></span>
-      <span id="toCurrencySymbol"></span>
+
+    
+    <button class="show-cart" onclick="showCart()">Mostrar Carrito</button>
+    
+  
+    <div id="cart">
+        <h2>Carrito de Divisas</h2>
+        <div id="cart-items"></div>
+        <label for="paymentCurrency">Moneda de Pago:</label>
+        <select id="paymentCurrency" onchange="updateCartDisplay()"></select>
+        <div id="cart-total"></div>
+        <button onclick="clearCart()">Vaciar Carrito</button>
+        <button onclick="hideCart()">Cerrar Carrito</button>
     </div>
-  </div>
-
-  <button onclick="convert()">Convert</button>
-
-  <div id="conversion-message"></div>
-  <div id="loading" class="loading"></div>
-</div>
 
 <!---- Aca ---->
 
