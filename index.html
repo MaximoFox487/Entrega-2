@@ -73,7 +73,7 @@
                 <div class="row">
                     <label for="cryptoCurrency">Moneda:</label>
                     <select id="cryptoCurrency" required></select>
-                    <label for="cryptoAmount">Cantidad:</label>
+                    <label for="cryptoAmount" class="cantidad">Cantidad:</label>
                     <input type="number" id="cryptoAmount" placeholder="Ingrese cantidad..." required>
                     <span id="cryptoQuote"></span>
                     <button onclick="addToCart()">Agregar al Carrito</button>
@@ -89,7 +89,7 @@
             <label for="paymentCurrency">Moneda de Pago:</label>
             <select id="paymentCurrency" onchange="updateCartDisplay()"></select>
             <div id="cart-total"></div>
-            <button onclick="clearCart()">Vaciar Carrito</button>
+            <button onclick="clearCart()" class="vaciarcarrito">Vaciar Carrito</button>
             <button onclick="hideCart()">Cerrar Carrito</button>
         </div>
 
